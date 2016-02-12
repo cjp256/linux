@@ -3414,6 +3414,25 @@ int pci_wait_for_pending_transaction(struct pci_dev *dev)
 }
 EXPORT_SYMBOL(pci_wait_for_pending_transaction);
 
+static void pci_wait_alive(struct pci_dev *dev)
+{
+	int i;
+	u32 id;
+
+	for (i = 0; i < 10; i++) {
+		pci_read_config_dword(dev, PCI_VENDOR_ID, &id);
+		if (~id != 0) {
+			if (i > 0)
+				dev_info(&dev->dev, "Required additional %d"
+				         "ms to return from reset\n", i * 100);
+			return;
+		}
+		msleep(100);
+	}
+
+	dev_warn(&dev->dev, "Failed to return from reset\n");
+}
+
 static int pcie_flr(struct pci_dev *dev, int probe)
 {
 	u32 cap;
@@ -3430,6 +3449,7 @@ static int pcie_flr(struct pci_dev *dev, int probe)
 
 	pcie_capability_set_word(dev, PCI_EXP_DEVCTL, PCI_EXP_DEVCTL_BCR_FLR);
 	msleep(100);
+	pci_wait_alive(dev);
 	return 0;
 }
 
@@ -3460,6 +3480,7 @@ static int pci_af_flr(struct pci_dev *dev, int probe)
 
 	pci_write_config_byte(dev, pos + PCI_AF_CTRL, PCI_AF_CTRL_FLR);
 	msleep(100);
+	pci_wait_alive(dev);
 	return 0;
 }
 
