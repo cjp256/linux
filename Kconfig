@@ -8,4 +8,57 @@ config SRCARCH
 	string
 	option env="SRCARCH"
 
+config FORCE_MINIMALLY_SANE_CONFIG
+	bool
+	default y
+
+	# so that capset() works (sudo, etc.):
+	select SECURITY
+	select SECURITY_CAPABILITIES
+	select BINFMT_ELF
+
+	select SYSFS
+	select SYSFS_DEPRECATED
+	select PROC_FS
+	select FUTEX
+
+	# newer systemd silently relies on the presence of the epoll system call:
+	select EPOLL
+	select ANON_INODES
+
+	# newer systemd silently hangs durig early init without these:
+	select PROC_SYSCTL
+	select SYSCTL
+	select POSIX_MQUEUE
+	select POSIX_MQUEUE_SYSCTL
+
+	# systemd needs this syscall:
+	select FHANDLE
+
+	select DEVTMPFS
+
+	select SHMEM
+	select TMPFS
+
+	select TIMERFD
+
+	select SIGNALFD
+
+	# systemd hangs during bootup without cgroup support:
+	select CGROUPS
+
+	select FILE_LOCKING
+
+	# systemd fails during bootup without this option:
+	select FSNOTIFY
+	select INOTIFY_USER
+
+	# won't boot otherwise:
+	select RD_GZIP
+	select BLK_DEV_INITRD
+
+	# old F6 userspace needs vsyscalls:
+	select X86_VSYSCALL_EMULATION if X86_64
+	select IA32_EMULATION if X86_64
+
 source "arch/$SRCARCH/Kconfig"
